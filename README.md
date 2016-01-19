@@ -8,7 +8,7 @@ First define a parameter that specifies where the input files are:
 
     params.input = "data/*.fa"
 
-Each of the files in the data directory can be made into a channel with:
+Each of the `.fa` files in the data directory will be made into a channel with:
 
     vegetable_datasets = Channel.fromPath(params.input)
 
@@ -35,26 +35,23 @@ These aligned files are now in the channel `vegetable_alns` and can be used as i
 
 #### 2. How do I get a unique identifier based on a dataset file names (e.g. `broccoli` from `broccoli.fa`) and have the results going to a specific folder (e.g. `results/broccoli/`)?
 
-First we can specify a results directory as shown below:
-
-    results_path = $PWD/results
-
-The best way to manage this is to have the channel emit a tuple containing both the file base name (`broccoli`) and the full file path (`data/broccoli.fa`):
+Channels can contain more than just files. We can create a channel that emits a tuple containing both the file base name (`broccoli`) and the full file path (`data/broccoli.fa`):
 
     datasets = Channel
                     .fromPath(params.input)
                     .map { file -> tuple(file.baseName, file) }
 
-And in the process we can then reference these variables (`datasetID` and `datasetFile`):
+Here we are modifying the datasets channel using the `map` function but there is large collection of channel operations that can be performed. 
+
+Now we have a channel that emits the basename and the file. In the process we can reference the `set` as the value `val(datasetID)` and file `file(datasetFile)` from the `datasets` channel:
 
     process clustalw2_align {
-        publishDir "$results_path/$datasetID"
-
+        
         input:
-        set datasetID, file(datasetFile) from datasets
+        set val(datasetID), file(datasetFile) from datasets
 
         output:
-        set datasetID, file("${datasetID}.aln") into aligned_files
+        set (datasetID), file("${datasetID}.aln") into aligned_files
 
         script:
         """
@@ -62,12 +59,37 @@ And in the process we can then reference these variables (`datasetID` and `datas
         """
     }
 
-
 In our example above would now have the folder `broccoli` which would contain the file `broccoli.aln`.
 
 Channels can contain and emit any type of data structure simplifying the flow of data.
 
-#### 3. Can a channel be used in two input statements? For example, I want `carrots.fa` to be aligned by both *ClustalW* and *T-Coffee*.
+#### 3. How do I get the output or results of process to be placed in a specific directory?
+
+We can add the command `publishDir` followed by a path to the beginning of a process. This creates a symbolic link any outputs in the given path.
+
+For example we can first specify a results directory to be called `results` in the current directory.
+
+    results_path = './results'
+
+In the process we can then use `publishDir` and the `$results_path` variable to specify the directory where the results will be placed at the completion of the process.
+
+    process clustalw2_align {
+        
+            publishDir "$results_path/clustalw2"
+
+            input:
+            set val(datasetID), file(datasetFile) from datasets
+
+            output:
+            file("${datasetID}.aln") into aligned_files
+
+            script:
+            """
+            clustalw2 -INFILE=${datasetFile} -OUTFILE=${datasetID}.aln
+            """
+    } 
+
+#### 4. Can a channel be used in two input statements? For example, I want `carrots.fa` to be aligned by both *ClustalW* and *T-Coffee*.
 
 No, a channel can be consumed only by one process or operator. You must split a channel before calling it as an input in 
 different processes. First we create the channel emitting the input files:
@@ -112,12 +134,6 @@ And a process for aligning the datasets with *T-Coffee*:
 
 The upside of splitting the channels is that given our three unaligned fasta files (`broccoli.fa`, `onion.fa` and `carrots.fa`) 
 six alignment processes (three x ClustalW) + (three x T-Coffee) will be executed as parallel processes.
-
-#### 4. Why the hell do I keep getting “did you forget to escape \${5} errors”? Variables explained.
-    
-How to I use a Nextflow variable and in the script part of process?
-How to I use a Bash/Perl/Python variable and in the script part of process?
-How to I make a Bash/Perl/Python variable a Nextflow variable.
 
 #### 5. I have executables in my code, how should I call them in Nextflow?
 
@@ -213,7 +229,7 @@ a simple for-loop.
     }
 
 
-### 8. I have two channels one with several items and a second one with only one item, why the process is running a single time?
+### 8. I have two channels as an input to a process, one with several items and a second with only one item, why the process is running a single time?
 
     process intersect_bed {
         input:
