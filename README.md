@@ -93,7 +93,7 @@ In the process we can then use `publishDir` and the `$results_path` variable to 
 
 No, a channel can be consumed only by one process or operator. In practise, there is two options for proceeding with this. You can either have the output create multiple channels or you can split the channel before calling it as an input.
 
-##### Option 1: Have the output create two channels:
+##### Option 1: Have the output create two (or more) channels:
 
     process clustalw2_align {
   
