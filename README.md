@@ -91,8 +91,28 @@ In the process we can then use `publishDir` and the `$results_path` variable to 
 
 #### 4. Can a channel be used in two input statements? For example, I want `carrots.fa` to be aligned by both *ClustalW* and *T-Coffee*.
 
-No, a channel can be consumed only by one process or operator. You must split a channel before calling it as an input in 
-different processes. First we create the channel emitting the input files:
+No, a channel can be consumed only by one process or operator. In practise, there is two options for proceeding with this. You can either have the output create multiple channels or you can split the channel before calling it as an input.
+
+##### Option 1: Have the output create two channels:
+
+    process clustalw2_align {
+  
+        input:
+        set val(datasetID), file(datasetFile) from datasets
+ 
+        output: 
+        file("${datasetID}.aln") into aligned_filesA, aligned_filesB, aligned_filesC
+
+        '''
+        clustalw2 -INFILE=${datasetFile} -OUTFILE=${datasetID}.aln
+        '''
+    } 
+
+aligned_filesA, aligned_filesB and aligned_filesC now contain the identical output and can be used as the input of different processes.
+
+##### Option 2: Split the channel using the `.into` operator.
+
+Given we have a channel emitting the input files:
 
     vegetable_datasets = Channel.fromPath(params.input)
 
@@ -132,8 +152,6 @@ And a process for aligning the datasets with *T-Coffee*:
         """
     }
 
-The upside of splitting the channels is that given our three unaligned fasta files (`broccoli.fa`, `onion.fa` and `carrots.fa`) 
-six alignment processes (three x ClustalW) + (three x T-Coffee) will be executed as parallel processes.
 
 #### 5. I have executables in my code, how should I call them in Nextflow?
 
