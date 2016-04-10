@@ -169,7 +169,7 @@ First we place copy (or create a symlink to) the `esl-reformat` executable to th
         file clustalw_alignment from clustalw_alns
         
         output:
-        file "${clustalw_alignment.baseName}.phy" to clustalw_phylips
+        file "${clustalw_alignment.baseName}.phy" into clustalw_phylips
 
         script:
         """
@@ -182,7 +182,7 @@ First we place copy (or create a symlink to) the `esl-reformat` executable to th
         input:
         file clustalw_phylip from clustalw_phylips
         output:
-        file "${clustalw_alignment.baseName}.phy" to clustalw_phylips
+        file "${clustalw_alignment.baseName}.phy" into clustalw_phylips
 
         script:
         """
@@ -253,6 +253,7 @@ a simple for-loop.
         input:
         file bed from bed_collection
         file bed_features
+        
         output:
         file ('intersect.bed') into bed_light_activity
 
@@ -274,3 +275,61 @@ If you want to run the process as many times as files in bed_collection, you onl
 This code generates a dataflow value (or singleton). This type of channels can be used as many times as needed, because 
 it always returns the same value without removing it. That is way with this command the process will be run as many time 
 as bed files inside the bed_collection channel.
+
+### 9. How do I collect the actual filenames from files that result from processes?
+
+Consider an example with the popular transcript assembly tool cufflink and cuffmerge. 
+
+Cuffmerge takes as input a file containing the files names of the GTF files output by the individual cufflinks process tasks.
+
+We can collect the files names using the `collectFile` operator as shown below:
+
+    process cufflinks {
+    
+        input:
+        file annotationFile
+        set val(name), file(STAR_alignment) from STARmappedReads
+    
+        output:
+        set val(name), file("CUFF_${name}") into cufflinksTranscripts
+
+        script:
+        """
+        mkdir CUFF_${name}
+        cufflinks -g ${annotationFile} \
+                  -o CUFF_${name} \
+                  ${STAR_alignment}/${name}Aligned.sortedByCoord.out.bam
+        """
+    }
+
+    cufflinksTranscripts
+        .collectFile () { file ->  ['gtf_filenames.txt', file.name + '\n' ] }
+        .set { GTFfilenames }
+  
+    process cuffmerge {
+
+        input:
+        file annotationFile
+        file genomeFile
+        file gtf_filenames from GTFfilenames
+        file cufflinksTranscript from cufflinksTranscripts.toList()
+
+        output:
+        file "CUFFMERGE" into cuffmergeTranscripts
+
+        script:
+        // Cuffmerge
+        """
+            mkdir CUFFMERGE
+            cuffmerge -o CUFFMERGE \
+                      -g ${annotationFile}  
+                      -s ${genomeFile}
+                         ${gtf_filenames}
+        """
+    }
+
+* Here the process `cufflinks` will run for each sample from our `STARmappedReads` channel.
+* We then peform the `collectFile` operator on the channel `cufflinksTranscripts`.
+* For each file in the channel, we add the filename plus a new line to the file 'gtf_filenames.txt' as text. 
+* This text file is then set to a new channel `GTFfilenames`.
+* In cuffmerge, we now have as input the aforementioned text file PLUS the actual GTF files themselves, ensuring the GTFs are accessible from the work directory. 
