@@ -151,7 +151,7 @@ First we place copy (or create a symlink to) the `esl-reformat` executable to th
         file clustalw_alignment from clustalw_alns
         
         output:
-        file "${clustalw_alignment.baseName}.phy" to clustalw_phylips
+        file "${clustalw_alignment.baseName}.phy" into clustalw_phylips
 
         script:
         """
@@ -164,7 +164,7 @@ First we place copy (or create a symlink to) the `esl-reformat` executable to th
         input:
         file clustalw_phylip from clustalw_phylips
         output:
-        file "${clustalw_alignment.baseName}.phy" to clustalw_phylips
+        file "${clustalw_alignment.baseName}.phy" into clustalw_phylips
 
         script:
         """
@@ -314,4 +314,4 @@ We can collect the files names using the `collectFile` operator as shown below:
 * We then peform the `collectFile` operator on the channel `cufflinksTranscripts`.
 * For each file in the channel, we add the filename plus a new line to the file 'gtf_filenames.txt' as text. 
 * This text file is then set to a new channel `GTFfilenames`.
-* In cuffmerge, we now have as input the aforementioned text file PLUS the actual GTF files themselves, ensuring the GTF are accessible from the work directory. 
+* In cuffmerge, we now have as input the aforementioned text file PLUS the actual GTF files themselves, ensuring the GTFs are accessible from the work directory. 
