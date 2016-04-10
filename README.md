@@ -260,9 +260,11 @@ as bed files inside the bed_collection channel.
 
 ### 9. How do I collect the actual filenames from files that result from processes?
 
-Consider an example with the popular transcript assembly tool cufflink and cuffmerge. Cuffmerge takes as input a file containing the path and files names of GTF file output by the individual cufflinks executions.
+Consider an example with the popular transcript assembly tool cufflink and cuffmerge. 
 
-We can collect the files or files names using the `collectFile` operator as shown below:
+Cuffmerge takes as input a file containing the files names of the GTF files output by the individual cufflinks process tasks.
+
+We can collect the files names using the `collectFile` operator as shown below:
 
     process cufflinks {
     
@@ -304,14 +306,12 @@ We can collect the files or files names using the `collectFile` operator as show
             cuffmerge -o CUFFMERGE \
                       -g ${annotationFile}  
                       -s ${genomeFile}
-                      ${gtf_filenames}
+                         ${gtf_filenames}
         """
     }
 
-Here the process `cufflinks` will run for each sample from our `STARmappedReads` channel.
-
-We then peform the `collectFile` operator on the channel `cufflinksTranscripts`.
-
-For each file in the channel, we add the file name plus a new line to the file 'gtf_filenames.txt' as text. This txt file is then set to a new channel `GTFfilenames`
-
-In cuffmerge, we now have as input the aforementioned text file PLUS the actual GTF files themselves. This ensures they are accessible from the work directory. 
+* Here the process `cufflinks` will run for each sample from our `STARmappedReads` channel.
+* We then peform the `collectFile` operator on the channel `cufflinksTranscripts`.
+* For each file in the channel, we add the filename plus a new line to the file 'gtf_filenames.txt' as text. 
+* This text file is then set to a new channel `GTFfilenames`.
+* In cuffmerge, we now have as input the aforementioned text file PLUS the actual GTF files themselves, ensuring the GTF are accessible from the work directory. 
