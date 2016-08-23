@@ -81,7 +81,7 @@ In the process we can then use `publishDir` and the `$results_path` variable to 
             set val(datasetID), file(datasetFile) from datasets
 
             output:
-            file("${datasetID}.aln") into aligned_files
+            file "${datasetID}.aln" into aligned_files
 
             script:
             """
@@ -101,7 +101,7 @@ No, a channel can be consumed only by one process or operator. In practise, ther
         set val(datasetID), file(datasetFile) from datasets
  
         output: 
-        file("${datasetID}.aln") into aligned_filesA, aligned_filesB, aligned_filesC
+        file "${datasetID}.aln" into aligned_filesA, aligned_filesB, aligned_filesC
 
         '''
         clustalw2 -INFILE=${datasetFile} -OUTFILE=${datasetID}.aln
@@ -255,7 +255,7 @@ a simple for-loop.
         file bed_features
         
         output:
-        file ('intersect.bed') into bed_light_activity
+        file 'intersect.bed' into bed_light_activity
 
         script:
         """
