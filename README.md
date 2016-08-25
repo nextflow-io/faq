@@ -118,7 +118,7 @@ Given we have a channel emitting the input files:
 
 Next we can split it into two channels:
 
-    vegetable_datasets.into { datasets_clustalw; datasets_tcoffee }
+    vegetable_datasets.into ( datasets_clustalw; datasets_tcoffee )
 
 
 Then we can define a process for aligning the datasets with *ClustalW*:
