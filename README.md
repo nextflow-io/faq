@@ -2,7 +2,7 @@
 
 #### 1. I have a collection of input files (e.g. `carrots.fa`, `onions.fa`, `broccoli.fa`). How can I specify a process to be performed on each file in a parallel manner?
 
-The idea here is to create a `channel` that will trigger a process execution for each of your files. 
+The idea here is to create a `channel` that will trigger a process execution for each of your files.
 
 First define a parameter that specifies where the input files are:
 
@@ -41,12 +41,12 @@ Channels can contain more than just files. We can create a channel that emits a 
                     .fromPath(params.input)
                     .map { file -> tuple(file.baseName, file) }
 
-Here we are modifying the datasets channel using the `map` function but there is large collection of channel operations that can be performed. 
+Here we are modifying the datasets channel using the `map` function but there is large collection of channel operations that can be performed.
 
 Now we have a channel that emits the basename and the file. In the process we can reference the `set` as the value `val(datasetID)` and file `file(datasetFile)` from the `datasets` channel:
 
     process clustalw2_align {
-        
+
         input:
         set val(datasetID), file(datasetFile) from datasets
 
@@ -74,7 +74,7 @@ For example we can first specify a results directory to be called `results` in t
 In the process we can then use `publishDir` and the `$results_path` variable to specify the directory where the results will be placed at the completion of the process.
 
     process clustalw2_align {
-        
+
             publishDir "$results_path/clustalw2"
 
             input:
@@ -87,7 +87,7 @@ In the process we can then use `publishDir` and the `$results_path` variable to 
             """
             clustalw2 -INFILE=${datasetFile} -OUTFILE=${datasetID}.aln
             """
-    } 
+    }
 
 #### 4. Can a channel be used in two input statements? For example, I want `carrots.fa` to be aligned by both *ClustalW* and *T-Coffee*.
 
@@ -96,17 +96,17 @@ No, a channel can be consumed only by one process or operator. In practise, ther
 ##### Option 1: Have the output create two (or more) channels:
 
     process clustalw2_align {
-  
+
         input:
         set val(datasetID), file(datasetFile) from datasets
- 
-        output: 
+
+        output:
         file "${datasetID}.aln" into aligned_filesA, aligned_filesB, aligned_filesC
 
         '''
         clustalw2 -INFILE=${datasetFile} -OUTFILE=${datasetID}.aln
         '''
-    } 
+    }
 
 aligned_filesA, aligned_filesB and aligned_filesC now contain the identical output and can be used as the input of different processes.
 
@@ -126,7 +126,7 @@ Then we can define a process for aligning the datasets with *ClustalW*:
     process clustalw2_align {
         input:
         file vegetable_fasta from datasets_clustalw
-        
+
         output:
         file "${vegetable_fasta.baseName}.aln" into clustalw_alns
 
@@ -142,10 +142,10 @@ And a process for aligning the datasets with *T-Coffee*:
     process tcoffee_align {
         input:
         file vegetable_fasta from datasets_tcoffee
-        
+
         output:
         file "${vegetable_fasta.baseName}.aln" into tcoffee_alns
-    
+
         script:
         """
         t_coffee ${vegetable_fasta}
@@ -167,7 +167,7 @@ First we place copy (or create a symlink to) the `esl-reformat` executable to th
     process phylip_reformat {
         input:
         file clustalw_alignment from clustalw_alns
-        
+
         output:
         file "${clustalw_alignment.baseName}.phy" into clustalw_phylips
 
@@ -222,8 +222,8 @@ To perform a process *i* times, we can specify the input to be `each x from y..z
 For example, I have 100 files in the `bootstrapReplicateTrees` channel. I wish to perform one process where I iterate
 over each file inside the process.
 
-The idea here to transform the channel emitting 100 files to a channel that will collect all files into a list object 
-and produce that list as a sole emission. Then the process' script will be able to iterate over the files by using 
+The idea here to transform the channel emitting 100 files to a channel that will collect all files into a list object
+and produce that list as a sole emission. Then the process' script will be able to iterate over the files by using
 a simple for-loop.
 
     process concatenateBootstrapReplicates {
@@ -238,7 +238,7 @@ a simple for-loop.
         // Concatenate Bootstrap Trees
         script:
         """
-        for every treeFile in ${bootstrapTreeList}
+        for treeFile in ${bootstrapTreeList}
         do
             cat \$treeFile >> concatenatedBootstrapTrees.nwk
         done
@@ -253,7 +253,7 @@ a simple for-loop.
         input:
         file bed from bed_collection
         file bed_features
-        
+
         output:
         file 'intersect.bed' into bed_light_activity
 
@@ -263,33 +263,33 @@ a simple for-loop.
         """
     }
 
-In this example, the process will be run only one time. Here the channel is a dataflow stream (or queue) and when an item 
-is read it is removed from the channel, as the channel contains only one  file,  when it is read, it sends  a termination 
+In this example, the process will be run only one time. Here the channel is a dataflow stream (or queue) and when an item
+is read it is removed from the channel, as the channel contains only one  file,  when it is read, it sends  a termination
 signal to the process and it stops.
 
-If you want to run the process as many times as files in bed_collection, you only need to change the declaration of 
+If you want to run the process as many times as files in bed_collection, you only need to change the declaration of
 `bed_features` by:
 
     file bed_features.first()
 
-This code generates a dataflow value (or singleton). This type of channels can be used as many times as needed, because 
-it always returns the same value without removing it. That is way with this command the process will be run as many time 
+This code generates a dataflow value (or singleton). This type of channels can be used as many times as needed, because
+it always returns the same value without removing it. That is way with this command the process will be run as many time
 as bed files inside the bed_collection channel.
 
 ### 9. How do I collect the actual filenames from files that result from processes?
 
-Consider an example with the popular transcript assembly tool cufflink and cuffmerge. 
+Consider an example with the popular transcript assembly tool cufflink and cuffmerge.
 
 Cuffmerge takes as input a file containing the files names of the GTF files output by the individual cufflinks process tasks.
 
 We can collect the files names using the `collectFile` operator as shown below:
 
     process cufflinks {
-    
+
         input:
         file annotationFile
         set val(name), file(STAR_alignment) from STARmappedReads
-    
+
         output:
         set val(name), file("CUFF_${name}") into cufflinksTranscripts
 
@@ -305,7 +305,7 @@ We can collect the files names using the `collectFile` operator as shown below:
     cufflinksTranscripts
         .collectFile () { file ->  ['gtf_filenames.txt', file.name + '\n' ] }
         .set { GTFfilenames }
-  
+
     process cuffmerge {
 
         input:
@@ -330,6 +330,6 @@ We can collect the files names using the `collectFile` operator as shown below:
 
 * Here the process `cufflinks` will run for each sample from our `STARmappedReads` channel.
 * We then peform the `collectFile` operator on the channel `cufflinksTranscripts`.
-* For each file in the channel, we add the filename plus a new line to the file 'gtf_filenames.txt' as text. 
+* For each file in the channel, we add the filename plus a new line to the file 'gtf_filenames.txt' as text.
 * This text file is then set to a new channel `GTFfilenames`.
-* In cuffmerge, we now have as input the aforementioned text file PLUS the actual GTF files themselves, ensuring the GTFs are accessible from the work directory. 
+* In cuffmerge, we now have as input the aforementioned text file PLUS the actual GTF files themselves, ensuring the GTFs are accessible from the work directory.
