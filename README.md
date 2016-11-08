@@ -252,29 +252,29 @@ a simple for-loop.
     process intersect_bed {
         input:
         file bed from bed_collection
-        file bed_features
+        file features from bed_features
 
         output:
         file 'intersect.bed' into bed_light_activity
 
         script:
         """
-        bedtools intersect -a $bed -b $bed_features > intersect.bed
+        bedtools intersect -a $bed -b $features > intersect.bed
         """
     }
 
-In this example, the process will be run only one time. Here the channel is a dataflow stream (or queue) and when an item
-is read it is removed from the channel, as the channel contains only one  file,  when it is read, it sends  a termination
+In this example, the process will be run only one time. Here the channel is a dataflow stream and when an item
+is read it is removed from the channel, as the channel contains only one file, when it is read, it sends  a termination
 signal to the process and it stops.
 
-If you want to run the process as many times as files in bed_collection, you only need to change the declaration of
-`bed_features` by:
+If you want to run the process as many times as files in `bed_collection`, you only need to change the declaration of
+`features` by:
 
-    file bed_features.first()
+    file features from bed_features.first()
 
-This code generates a dataflow value (or singleton). This type of channels can be used as many times as needed, because
+This code generates a dataflow value (ie. a singleton value). This type of channels can be used as many times as needed, because
 it always returns the same value without removing it. That is way with this command the process will be run as many time
-as bed files inside the bed_collection channel.
+as bed files inside the `bed_collection` channel.
 
 ### 9. How do I collect the actual filenames from files that result from processes?
 
