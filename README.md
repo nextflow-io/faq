@@ -51,7 +51,7 @@ Now we have a channel that emits the basename and the file. In the process we ca
         set val(datasetID), file(datasetFile) from datasets
 
         output:
-        set (datasetID), file("${datasetID}.aln") into aligned_files
+        set val(datasetID), file("${datasetID}.aln") into aligned_files
 
         script:
         """
